@@ -1,0 +1,19 @@
+{
+  "sync_id": "79580436-e027-4e63-88cf-f966f418a33a",
+  "device_id": "samsung-health-demo",
+  "source": "samsung_health",
+  "cursor": "samsung-next-001",
+  "records": [
+    {
+      "external_id": "samsung-active-energy-001",
+      "metric_type": "active_energy_burned",
+      "value": 315,
+      "unit": "kcal",
+      "measured_from": "2026-06-10T06:00:00Z",
+      "measured_to": "2026-06-10T18:00:00Z",
+      "timezone": "Europe/Amsterdam",
+      "source_app": "Samsung Health"
+    }
+  ],
+  "workouts": []
+}
