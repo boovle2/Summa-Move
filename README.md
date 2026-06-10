@@ -22,7 +22,7 @@ Copy-Item .env.example .env
 composer install
 php artisan key:generate
 php artisan migrate
-php artisan serve
+php artisan serve --host=0.0.0.0 --port=8001
 ```
 
 Voor tests wordt SQLite in-memory gebruikt:
@@ -50,7 +50,7 @@ cd mobile
 flutter pub get
 flutter analyze
 flutter test
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+flutter run
 ```
 
 De native hostbridges moeten op SDK-geschikte machines worden aangesloten en getest:

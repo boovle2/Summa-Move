@@ -3,6 +3,8 @@
 .flutter-plugins-dependencies
 .metadata
 .packages
+.idea/
+*.iml
 /build/
 /coverage/
 android/local.properties
