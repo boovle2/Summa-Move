@@ -14,6 +14,8 @@ use Throwable;
 
 class HealthSyncService
 {
+    public function __construct(private readonly GamificationService $gamification) {}
+
     /**
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
@@ -128,6 +130,8 @@ class HealthSyncService
 
             throw $exception;
         }
+
+        $this->gamification->recalculate($user);
 
         return $this->result($run->fresh());
     }

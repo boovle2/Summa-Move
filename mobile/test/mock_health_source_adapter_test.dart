@@ -14,7 +14,8 @@ void main() {
     expect(await adapter.requestPermissions(supportedMetrics), isTrue);
     expect(
       changes.records.map((record) => record.metricType).toSet(),
-      containsAll(supportedMetrics.where((metric) => metric != 'workout_session')),
+      containsAll(
+          supportedMetrics.where((metric) => metric != 'workout_session')),
     );
     expect(changes.workouts, hasLength(1));
     expect(changes.cursor, isNotNull);

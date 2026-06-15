@@ -16,9 +16,12 @@ class ApiClient {
   final http.Client _http;
   final FlutterSecureStorage _storage;
 
-  Future<bool> get isAuthenticated async => (await _storage.read(key: 'token')) != null;
+  Future<bool> get isAuthenticated async =>
+      (await _storage.read(key: 'token')) != null;
+  Future<String?> get currentUserName => _storage.read(key: 'user_name');
+  Future<String?> get currentUserRole => _storage.read(key: 'user_role');
 
-  Future<void> login({
+  Future<String> login({
     required String email,
     required String password,
     required String deviceName,
@@ -33,11 +36,18 @@ class ApiClient {
         'device_name': deviceName,
       },
     );
-    final token = (response['data'] as Map<String, dynamic>)['token'] as String;
+    final data = response['data'] as Map<String, dynamic>;
+    final token = data['token'] as String;
+    final user = data['user'] as Map<String, dynamic>;
+    final userName = user['name'] as String;
+    final userRole = user['role'] as String? ?? 'user';
     await _storage.write(key: 'token', value: token);
+    await _storage.write(key: 'user_name', value: userName);
+    await _storage.write(key: 'user_role', value: userRole);
+    return userName;
   }
 
-  Future<void> register({
+  Future<String> register({
     required String name,
     required String email,
     required String password,
@@ -55,13 +65,25 @@ class ApiClient {
         'device_name': deviceName,
       },
     );
-    final token = (response['data'] as Map<String, dynamic>)['token'] as String;
+    final data = response['data'] as Map<String, dynamic>;
+    final token = data['token'] as String;
+    final user = data['user'] as Map<String, dynamic>;
+    final userName = user['name'] as String;
+    final userRole = user['role'] as String? ?? 'user';
     await _storage.write(key: 'token', value: token);
+    await _storage.write(key: 'user_name', value: userName);
+    await _storage.write(key: 'user_role', value: userRole);
+    return userName;
   }
 
   Future<void> logout() async {
-    await _request('DELETE', '/auth/logout');
-    await _storage.delete(key: 'token');
+    try {
+      await _request('DELETE', '/auth/logout');
+    } finally {
+      await _storage.delete(key: 'token');
+      await _storage.delete(key: 'user_name');
+      await _storage.delete(key: 'user_role');
+    }
   }
 
   Future<Map<String, dynamic>> get(String path) => _request('GET', path);
@@ -77,6 +99,8 @@ class ApiClient {
     Map<String, dynamic> body,
   ) =>
       _request('PUT', path, body: body);
+
+  Future<Map<String, dynamic>> delete(String path) => _request('DELETE', path);
 
   Future<Map<String, dynamic>> _request(
     String method,

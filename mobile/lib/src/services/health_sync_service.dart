@@ -31,9 +31,10 @@ class HealthSyncService {
     });
 
     final status = await this.status();
-    final connections = ((status['data'] as Map<String, dynamic>)['connections'] as List)
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item));
+    final connections =
+        ((status['data'] as Map<String, dynamic>)['connections'] as List)
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item));
     final activeConnection = connections.firstWhere(
       (connection) => connection['source'] == adapter.source.apiValue,
       orElse: () => <String, dynamic>{},

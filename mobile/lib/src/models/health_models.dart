@@ -61,9 +61,12 @@ class NormalizedHealthRecord {
         'metric_type': metricType,
         'value': value,
         'unit': unit,
-        if (measuredAt != null) 'measured_at': measuredAt!.toUtc().toIso8601String(),
-        if (measuredFrom != null) 'measured_from': measuredFrom!.toUtc().toIso8601String(),
-        if (measuredTo != null) 'measured_to': measuredTo!.toUtc().toIso8601String(),
+        if (measuredAt != null)
+          'measured_at': measuredAt!.toUtc().toIso8601String(),
+        if (measuredFrom != null)
+          'measured_from': measuredFrom!.toUtc().toIso8601String(),
+        if (measuredTo != null)
+          'measured_to': measuredTo!.toUtc().toIso8601String(),
         if (timezone != null) 'timezone': timezone,
         if (sourceApp != null) 'source_app': sourceApp,
       };

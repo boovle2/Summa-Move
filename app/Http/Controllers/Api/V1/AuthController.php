@@ -16,7 +16,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create($request->safe()->only(['name', 'email', 'password']));
-        $token = $user->createToken($request->string('device_name')->toString(), ['device:write', 'health:sync', 'health:read']);
+        $token = $user->createToken($request->string('device_name')->toString(), $this->abilities($user));
 
         return response()->json([
             'data' => [
@@ -36,7 +36,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken($request->string('device_name')->toString(), ['device:write', 'health:sync', 'health:read']);
+        $token = $user->createToken($request->string('device_name')->toString(), $this->abilities($user));
 
         return response()->json([
             'data' => [
@@ -51,5 +51,17 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    private function abilities(User $user): array
+    {
+        return array_values(array_filter([
+            'device:write',
+            'health:sync',
+            'health:read',
+            'app:read',
+            'app:write',
+            $user->role === 'admin' ? 'admin:write' : null,
+        ]));
     }
 }

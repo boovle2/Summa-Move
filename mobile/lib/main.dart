@@ -1,178 +1,179 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import 'src/health/health_source_adapter.dart';
-import 'src/health/method_channel_health_adapter.dart';
-import 'src/health/mock_health_source_adapter.dart';
-import 'src/models/health_models.dart';
-import 'src/services/api_client.dart';
+import 'src/screens/connection_page.dart';
+import 'src/screens/home_page.dart';
+import 'src/screens/login_page.dart';
+import 'src/screens/product_pages.dart';
 import 'src/services/health_sync_service.dart';
-
-const apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:8001/api/v1',
-);
+import 'src/state/app_state.dart';
 
 void main() {
-  runApp(const SummaMoveApp());
+  runApp(const ProviderScope(child: SummaMoveApp()));
 }
 
-class SummaMoveApp extends StatelessWidget {
+class SummaMoveApp extends ConsumerStatefulWidget {
   const SummaMoveApp({super.key});
 
   @override
+  ConsumerState<SummaMoveApp> createState() => _SummaMoveAppState();
+}
+
+class _SummaMoveAppState extends ConsumerState<SummaMoveApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    final session = ref.read(sessionProvider);
+    _router = GoRouter(
+      initialLocation: '/splash',
+      refreshListenable: session,
+      redirect: (context, state) {
+        if (!session.initialized) {
+          return state.matchedLocation == '/splash' ? null : '/splash';
+        }
+        if (!session.authenticated) {
+          return state.matchedLocation == '/login' ? null : '/login';
+        }
+        if (state.matchedLocation == '/login' ||
+            state.matchedLocation == '/splash') {
+          return '/app';
+        }
+        if (state.matchedLocation.startsWith('/admin') && !session.isAdmin) {
+          return '/app';
+        }
+        return null;
+      },
+      routes: [
+        GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+        GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+        GoRoute(path: '/app', builder: (_, __) => const MainShell()),
+        GoRoute(
+            path: '/quick', builder: (_, __) => const QuickChallengesPage()),
+        GoRoute(
+          path: '/challenge/:id',
+          builder: (_, state) =>
+              ChallengeDetailPage(id: int.parse(state.pathParameters['id']!)),
+        ),
+        GoRoute(path: '/avatar', builder: (_, __) => const AvatarPage()),
+        GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
+        GoRoute(path: '/menu', builder: (_, __) => const MenuPage()),
+        GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+        GoRoute(
+            path: '/privacy',
+            builder: (_, __) => const InfoPage(
+                title: 'Privacy',
+                body:
+                    'SummaMove gebruikt health-data alleen voor jouw beweegdoelen en challenges.')),
+        GoRoute(
+            path: '/help',
+            builder: (_, __) => const InfoPage(
+                title: 'Help & Support',
+                body:
+                    'Controleer je health-permissies en synchroniseer opnieuw. Neem bij vragen contact op met het SummaMove-team.')),
+        GoRoute(
+          path: '/messages/:id',
+          builder: (_, state) =>
+              MessagesPage(friendId: int.parse(state.pathParameters['id']!)),
+        ),
+        GoRoute(
+          path: '/health-sync',
+          builder: (_, __) {
+            final api = ref.read(apiClientProvider);
+            return ConnectionPage(
+              api: api,
+              sync: HealthSyncService(
+                  api: api, deviceId: 'summamove-demo-device'),
+              onAuthenticated: (_) {},
+              onLoggedOut: () => ref.read(sessionProvider).logout(),
+            );
+          },
+        ),
+        GoRoute(path: '/admin', builder: (_, __) => const AdminPage()),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final themeMode = ref.watch(themeModeProvider).mode;
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       title: 'SummaMove',
+      routerConfig: _router,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff167d4d)),
+        scaffoldBackgroundColor: const Color(0xFFF8F8F8),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE91E63)),
+        cardTheme: const CardThemeData(color: Colors.white),
         useMaterial3: true,
       ),
-      home: const SyncPage(),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFE91E63), brightness: Brightness.dark),
+        useMaterial3: true,
+      ),
+      themeMode: themeMode,
     );
   }
 }
 
-class SyncPage extends StatefulWidget {
-  const SyncPage({super.key});
-
-  @override
-  State<SyncPage> createState() => _SyncPageState();
-}
-
-class _SyncPageState extends State<SyncPage> {
-  final _email = TextEditingController(text: 'demo@example.com');
-  final _password = TextEditingController(text: 'password123');
-  final _api = ApiClient(baseUrl: apiBaseUrl);
-  HealthSource _source = HealthSource.mock;
-  bool _busy = false;
-  String _status = 'Log in om handmatig te synchroniseren.';
-
-  late final _sync = HealthSyncService(
-    api: _api,
-    deviceId: 'summamove-demo-device',
-  );
-
-  HealthSourceAdapter get _adapter => switch (_source) {
-        HealthSource.mock => MockHealthSourceAdapter(),
-        HealthSource.healthConnect => HealthConnectAdapter(),
-        HealthSource.healthKit => HealthKitAdapter(),
-        HealthSource.samsungHealth => SamsungHealthAdapter(),
-      };
-
-  @override
-  void dispose() {
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  Future<void> _run(Future<Object?> Function() action) async {
-    setState(() => _busy = true);
-    try {
-      final result = await action();
-      setState(() => _status = result?.toString() ?? 'Klaar.');
-    } catch (error) {
-      setState(() => _status = error.toString());
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
+class SplashPage extends StatelessWidget {
+  const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}
+
+class MainShell extends ConsumerStatefulWidget {
+  const MainShell({super.key});
+
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> {
+  int index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final repository = ref.watch(productRepositoryProvider);
+    final pages = [
+      HomePage(
+        repository: repository,
+        userName: ref.watch(sessionProvider).name,
+        onOpenMenu: () => context.push('/menu'),
+        onOpenChallenges: () => setState(() => index = 1),
+        onOpenAvatar: () => context.push('/avatar'),
+        onOpenQuick: () => context.push('/quick'),
+      ),
+      const ChallengesPage(),
+      const FriendsPage(),
+      const ShopPage(),
+      const RankingsPage(),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('SummaMove health-sync')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          TextField(
-            controller: _email,
-            decoration: const InputDecoration(labelText: 'E-mail'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _password,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Wachtwoord'),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _busy
-                ? null
-                : () => _run(() async {
-                      await _api.login(
-                        email: _email.text,
-                        password: _password.text,
-                        deviceName: 'summamove-flutter-demo',
-                      );
-                      return 'Ingelogd.';
-                    }),
-            child: const Text('Inloggen'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: _busy
-                ? null
-                : () => _run(() async {
-                      await _api.register(
-                        name: 'Demo User',
-                        email: _email.text,
-                        password: _password.text,
-                        deviceName: 'summamove-flutter-demo',
-                      );
-                      return 'Account aangemaakt en ingelogd.';
-                    }),
-            child: const Text('Account aanmaken'),
-          ),
-          TextButton(
-            onPressed: _busy
-                ? null
-                : () => _run(() async {
-                      await _api.logout();
-                      return 'Uitgelogd.';
-                    }),
-            child: const Text('Uitloggen'),
-          ),
-          const Divider(height: 32),
-          DropdownButtonFormField<HealthSource>(
-            initialValue: _source,
-            decoration: const InputDecoration(labelText: 'Actieve health-bron'),
-            items: HealthSource.values
-                .map(
-                  (source) => DropdownMenuItem(
-                    value: source,
-                    child: Text(source.label),
-                  ),
-                )
-                .toList(),
-            onChanged: _busy
-                ? null
-                : (source) => setState(() => _source = source ?? _source),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _busy ? null : () => _run(() => _sync.sync(_adapter)),
-            icon: const Icon(Icons.sync),
-            label: const Text('Handmatig synchroniseren'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy
-                ? null
-                : () => _run(() => _sync.dailySummary(date: DateTime.now())),
-            icon: const Icon(Icons.today),
-            label: const Text('Dagoverzicht ophalen'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : () => _run(_sync.status),
-            icon: const Icon(Icons.info_outline),
-            label: const Text('Syncstatus ophalen'),
-          ),
-          const SizedBox(height: 24),
-          if (_busy) const LinearProgressIndicator(),
-          const SizedBox(height: 12),
-          SelectableText(_status),
+      body: IndexedStack(index: index, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (value) => setState(() => index = value),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.emoji_events_outlined), label: 'Challenges'),
+          NavigationDestination(
+              icon: Icon(Icons.people_outline), label: 'Vrienden'),
+          NavigationDestination(
+              icon: Icon(Icons.shopping_bag_outlined), label: 'Shop'),
+          NavigationDestination(
+              icon: Icon(Icons.leaderboard_outlined), label: 'Ranking'),
         ],
       ),
     );
