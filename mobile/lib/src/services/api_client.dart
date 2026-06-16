@@ -80,10 +80,14 @@ class ApiClient {
     try {
       await _request('DELETE', '/auth/logout');
     } finally {
-      await _storage.delete(key: 'token');
-      await _storage.delete(key: 'user_name');
-      await _storage.delete(key: 'user_role');
+      await clearLocalSession();
     }
+  }
+
+  Future<void> clearLocalSession() async {
+    await _storage.delete(key: 'token');
+    await _storage.delete(key: 'user_name');
+    await _storage.delete(key: 'user_role');
   }
 
   Future<Map<String, dynamic>> get(String path) => _request('GET', path);

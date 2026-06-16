@@ -826,12 +826,19 @@ class MenuPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final admin = ref.watch(sessionProvider).isAdmin;
+    final session = ref.watch(sessionProvider);
+    final admin = session.isAdmin;
     return Scaffold(
       appBar: AppBar(title: const Text('Menu')),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          if (session.isOfflineDemo)
+            const ListTile(
+              leading: Icon(Icons.privacy_tip_outlined),
+              title: Text('Lokale demo'),
+              subtitle: Text('Data staat alleen op dit toestel'),
+            ),
           ListTile(
               leading: const Icon(Icons.badge_outlined),
               title: const Text('Sportpaspoort'),
@@ -892,6 +899,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         future: future,
         builder: (context, settings) => ListView(
           children: [
+            if (ref.watch(sessionProvider).isOfflineDemo)
+              const ListTile(
+                leading: Icon(Icons.privacy_tip_outlined),
+                title: Text('Lokale demo'),
+                subtitle: Text('Wijzigingen resetten bij app-herstart'),
+              ),
             SwitchListTile(
                 value: settings['notifications'] == true,
                 onChanged: (value) => update('notifications', value),

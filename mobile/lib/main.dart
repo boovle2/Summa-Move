@@ -81,6 +81,13 @@ class _SummaMoveAppState extends ConsumerState<SummaMoveApp> {
         GoRoute(
           path: '/health-sync',
           builder: (_, __) {
+            if (ref.watch(sessionProvider).isOfflineDemo) {
+              return const InfoPage(
+                title: 'Health-sync',
+                body:
+                    'Lokale demo gebruikt vaste demo-healthdata. Geen Laravel-server of Health Connect nodig voor deze klantdemo.',
+              );
+            }
             final api = ref.read(apiClientProvider);
             return ConnectionPage(
               api: api,

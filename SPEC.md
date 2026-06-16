@@ -11,6 +11,7 @@ SummaMove Laravel 13 API + Flutter app leveren health-gestuurde gamification, so
 - Admin-demodata beïnvloedt profiel/challenges/punten; ⊥ leaderboards.
 - Eerste versie Nederlands; geen push, realtime sockets, betalingen, medische functies, AI-advies of storepublicatie.
 - Bestaande `/api/v1/auth`, `/devices`, `/health` compatibel houden.
+- Offline Android-demo is Flutter-only; in-memory data; reset bij app-herstart.
 
 ## §I INTERFACES
 - api.auth: `POST /api/v1/auth/register|login`; `DELETE /api/v1/auth/logout`
@@ -22,6 +23,8 @@ SummaMove Laravel 13 API + Flutter app leveren health-gestuurde gamification, so
 - api.rank: `GET /api/v1/rankings?period=today|week|progress|friends`
 - api.admin: `/api/v1/admin/dashboard|challenges|shop-items|teams|users|assignments|point-adjustments|demo-health|audits`
 - dart: `HealthSourceAdapter.isAvailable|requestPermissions|readChanges`
+- dart.repo: `ProductRepository` contract met `ApiProductRepository|OfflineDemoRepository`
+- dart.session: `SessionController.loginOfflineUser|loginOfflineAdmin|offlineDemo`
 - docs: `docs/api-contract.md`; `docs/fixtures/*.json`
 
 ## §V INVARIANTS
@@ -43,6 +46,8 @@ V15: `admin_demo` data/transactions ⊥ rankingberekening.
 V16: social reads/writes uitsluitend geaccepteerde relatie of eigen verzoek/team.
 V17: Flutter route/admin UI zichtbaar iff sessierol `admin`.
 V18: alle hoofdflows tonen loading/error/empty/success status.
+V19: normale Laravel-login blijft API-pad; offline demo gebruikt geen Laravel/API/Health Connect call.
+V20: offline demo-data alleen in memory; klant/admin mutaties resetten bij app-herstart.
 
 ## §T TASKS
 id|status|task|cites
@@ -58,6 +63,7 @@ T9|x|Flutter Riverpod + go_router + repositories|V17,V18
 T10|x|user flows: home/challenges/social/shop/ranking/profile/settings|V11,V16,V18,I.api.me,I.api.challenge,I.api.social,I.api.shop,I.api.rank
 T11|x|Flutter admin dashboard/content/toekenning/demodata/audit|V14,V15,V17,V18,I.api.admin
 T12|x|eindvalidatie: Laravel, Flutter, APK, emulator, security, review|V1,V6,V11,V12,V13,V14,V15,V16,V17,V18
+T13|x|offline incognito demo mode voor Android|V17,V18,V19,V20,I.dart.repo,I.dart.session
 
 ## §B BUGS
 id|date|cause|fix

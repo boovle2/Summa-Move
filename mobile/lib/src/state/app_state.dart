@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../services/api_client.dart';
+import '../services/offline_demo_repository.dart';
 import '../services/product_repository.dart';
 
 const apiBaseUrl = String.fromEnvironment(
@@ -12,8 +13,22 @@ const apiBaseUrl = String.fromEnvironment(
 
 final apiClientProvider =
     Provider<ApiClient>((ref) => ApiClient(baseUrl: apiBaseUrl));
-final productRepositoryProvider = Provider<ProductRepository>(
-    (ref) => ProductRepository(ref.read(apiClientProvider)));
+final offlineDemoRepositoryProvider =
+    Provider<OfflineDemoRepository>((ref) => OfflineDemoRepository());
+final productRepositoryProvider = Provider<ProductRepository>((ref) {
+  final session = ref.watch(sessionProvider);
+  if (session.offlineDemo) {
+    final repository = ref.watch(offlineDemoRepositoryProvider);
+    if (session.isAdmin) {
+      repository.useDemoAdmin();
+    } else {
+      repository.useDemoUser();
+    }
+    return repository;
+  }
+
+  return ApiProductRepository(ref.read(apiClientProvider));
+});
 final themeModeProvider = ChangeNotifierProvider<ThemeModeController>(
   (ref) => ThemeModeController(),
 );
@@ -48,12 +63,15 @@ class SessionController extends ChangeNotifier {
   final Future<void> Function()? onAuthenticated;
   bool initialized = false;
   bool authenticated = false;
+  bool offlineDemo = false;
   String name = 'sportieveling';
   String role = 'user';
 
   bool get isAdmin => role == 'admin';
+  bool get isOfflineDemo => offlineDemo;
 
   Future<void> restore() async {
+    offlineDemo = false;
     authenticated = await api.isAuthenticated;
     name = await api.currentUserName ?? name;
     role = await api.currentUserRole ?? role;
@@ -65,6 +83,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> login(String email, String password) async {
+    offlineDemo = false;
     name = await api.login(
         email: email, password: password, deviceName: 'summamove-flutter');
     role = await api.currentUserRole ?? 'user';
@@ -75,6 +94,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> register(String name, String email, String password) async {
+    offlineDemo = false;
     this.name = await api.register(
         name: name,
         email: email,
@@ -87,9 +107,35 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loginOfflineUser() async {
+    await api.clearLocalSession();
+    name = 'Demo User';
+    role = 'user';
+    authenticated = true;
+    initialized = true;
+    offlineDemo = true;
+    notifyListeners();
+  }
+
+  Future<void> loginOfflineAdmin() async {
+    await api.clearLocalSession();
+    name = 'SummaMove Admin';
+    role = 'admin';
+    authenticated = true;
+    initialized = true;
+    offlineDemo = true;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
-    await api.logout();
+    if (offlineDemo) {
+      await api.clearLocalSession();
+    } else {
+      await api.logout();
+    }
     authenticated = false;
+    offlineDemo = false;
+    name = 'sportieveling';
     role = 'user';
     notifyListeners();
   }

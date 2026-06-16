@@ -38,71 +38,123 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> showLocalDemoSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ListTile(
+                leading: Icon(Icons.privacy_tip_outlined),
+                title: Text('Lokale demo'),
+                subtitle: Text('Demo-data zonder server'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Bekijk als klant'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await ref.read(sessionProvider).loginOfflineUser();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Admin demo'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await ref.read(sessionProvider).loginOfflineAdmin();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Column(
-                children: [
-                  const Icon(Icons.fitness_center,
-                      size: 84, color: Color(0xFFE91E63)),
-                  const SizedBox(height: 18),
-                  Text('Summa Move',
-                      style: Theme.of(context)
-                          .textTheme
-                          .displaySmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text('Klaar om vandaag in beweging te komen?'),
-                  const SizedBox(height: 32),
-                  TextField(
-                      controller: email,
-                      decoration: const InputDecoration(
-                          labelText: 'E-mail', border: OutlineInputBorder())),
-                  const SizedBox(height: 14),
-                  TextField(
-                      controller: password,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                          labelText: 'Wachtwoord',
-                          border: OutlineInputBorder())),
-                  if (error != null)
-                    Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(error!,
-                            style: const TextStyle(color: Colors.red))),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: busy ? null : submit,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: busy
-                            ? const CircularProgressIndicator()
-                            : const Text('Inloggen'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: busy
-                        ? null
-                        : () {
-                            email.text = 'admin@summamove.test';
-                            password.text = 'password123';
-                          },
-                    child: const Text('Gebruik admin-demo'),
-                  ),
-                ],
+        child: Stack(
+          children: [
+            Positioned(
+              right: 12,
+              top: 8,
+              child: IconButton(
+                tooltip: 'Lokale demo',
+                onPressed: busy ? null : showLocalDemoSheet,
+                icon: const Icon(Icons.privacy_tip_outlined),
               ),
             ),
-          ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(28),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.fitness_center,
+                          size: 84, color: Color(0xFFE91E63)),
+                      const SizedBox(height: 18),
+                      Text('Summa Move',
+                          style: Theme.of(context)
+                              .textTheme
+                              .displaySmall
+                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      const Text('Klaar om vandaag in beweging te komen?'),
+                      const SizedBox(height: 32),
+                      TextField(
+                          controller: email,
+                          decoration: const InputDecoration(
+                              labelText: 'E-mail',
+                              border: OutlineInputBorder())),
+                      const SizedBox(height: 14),
+                      TextField(
+                          controller: password,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                              labelText: 'Wachtwoord',
+                              border: OutlineInputBorder())),
+                      if (error != null)
+                        Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(error!,
+                                style: const TextStyle(color: Colors.red))),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: busy ? null : submit,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: busy
+                                ? const CircularProgressIndicator()
+                                : const Text('Inloggen'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: busy
+                            ? null
+                            : () {
+                                email.text = 'admin@summamove.test';
+                                password.text = 'password123';
+                              },
+                        child: const Text('Gebruik admin-demo'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
