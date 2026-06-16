@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 
 import '../health/health_source_adapter.dart';
@@ -29,8 +31,10 @@ class _ConnectionPageState extends State<ConnectionPage> {
   final _name = TextEditingController(text: 'Demo User');
   final _email = TextEditingController(text: 'demo@example.com');
   final _password = TextEditingController(text: 'password123');
-  HealthSource _source = HealthSource.mock;
+  late HealthSource _source =
+      Platform.isAndroid ? HealthSource.healthConnect : HealthSource.mock;
   bool _busy = false;
+  bool _authenticated = false;
   String _status = 'Log in om handmatig te synchroniseren.';
 
   HealthSourceAdapter get _adapter => switch (_source) {
@@ -40,12 +44,36 @@ class _ConnectionPageState extends State<ConnectionPage> {
         HealthSource.samsungHealth => SamsungHealthAdapter(),
       };
 
+  List<HealthSource> get _availableSources {
+    if (Platform.isAndroid) {
+      return const [HealthSource.healthConnect, HealthSource.mock];
+    }
+    return HealthSource.values;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingSession();
+  }
+
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingSession() async {
+    final authenticated = await widget.api.isAuthenticated;
+    if (!mounted) return;
+    setState(() {
+      _authenticated = authenticated;
+      if (authenticated) {
+        _status = 'Ingelogd. Klaar om te synchroniseren.';
+      }
+    });
   }
 
   Future<void> _run(Future<Object?> Function() action) async {
@@ -92,6 +120,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         password: _password.text,
                         deviceName: 'summamove-flutter-demo',
                       );
+                      _authenticated = true;
                       widget.onAuthenticated(name);
                       return 'Ingelogd.';
                     }),
@@ -108,6 +137,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         password: _password.text,
                         deviceName: 'summamove-flutter-demo',
                       );
+                      _authenticated = true;
                       widget.onAuthenticated(name);
                       return 'Account aangemaakt en ingelogd.';
                     }),
@@ -118,6 +148,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                 ? null
                 : () => _run(() async {
                       await widget.api.logout();
+                      _authenticated = false;
                       widget.onLoggedOut();
                       return 'Uitgelogd.';
                     }),
@@ -127,7 +158,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
           DropdownButtonFormField<HealthSource>(
             initialValue: _source,
             decoration: const InputDecoration(labelText: 'Actieve health-bron'),
-            items: HealthSource.values
+            items: _availableSources
                 .map((source) =>
                     DropdownMenuItem(value: source, child: Text(source.label)))
                 .toList(),
@@ -137,8 +168,9 @@ class _ConnectionPageState extends State<ConnectionPage> {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed:
-                _busy ? null : () => _run(() => widget.sync.sync(_adapter)),
+            onPressed: _busy || !_authenticated
+                ? null
+                : () => _run(() => widget.sync.sync(_adapter)),
             icon: const Icon(Icons.sync),
             label: const Text('Handmatig synchroniseren'),
           ),
