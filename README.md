@@ -13,7 +13,7 @@ docs/                API-contract en syncfixtures
 mobile/              Flutter-app
 routes/api.php       /api/v1 routes
 tests/Feature/Api/   API-tests
-release-apks/        lokale APK-deliverables, niet voor GitHub
+release-apks/        demo-APK's die bewust via Git worden meegeleverd
 ```
 
 `SPEC.md` en `FORMAT.md` blijven in de repo als werkdocumenten voor Coding Stack/Cavekit.
@@ -44,14 +44,14 @@ Alle seedaccounts gebruiken standaard wachtwoord `password123`, tenzij `DEMO_PAS
 
 ## APK's
 
-De laatste lokale APK's staan in `release-apks/`.
+De laatste demo-APK's staan in `release-apks/`. Deze map staat bewust in Git, zodat teamgenoten de APK's direct met `git pull` meekrijgen.
 
 | APK | Bedoeld voor | API-url |
 |---|---|---|
 | `SummaMove-android-real-device.apk` | echte Android telefoon op dezelfde Wi-Fi | `http://192.168.178.109:8001/api/v1` |
 | `SummaMove-android-emulator.apk` | Android Emulator op dezelfde pc | `http://10.0.2.2:8001/api/v1` |
 
-De APK-map blijft lokaal in de Laravel map, maar wordt niet naar GitHub gepusht.
+GitHub kan een waarschuwing tonen omdat de APK's iets groter zijn dan 50MB per bestand. Voor deze demo is dat acceptabel; de bestanden blijven onder de harde GitHub-limiet van 100MB.
 
 ## Health Connect en offline demo
 
