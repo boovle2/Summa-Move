@@ -1,64 +1,82 @@
 # SummaMove
 
-SummaMove is een Laravel 13 API met een Flutter-client voor read-only synchronisatie van health-data. De mobiele app leest data uit Health Connect, HealthKit of Samsung Health, normaliseert die en stuurt deze naar Laravel. Laravel leest nooit rechtstreeks uit een health-platform.
+SummaMove is een Laravel API met een Flutter-app voor sportchallenges. De app leest health-data op het toestel, zet die om naar een vast formaat en stuurt dit naar Laravel. Laravel regelt login, gebruikersdata, challenges, punten, shop, vrienden, teams, rankings en adminfuncties.
+
+Laravel leest nooit zelf Health Connect, HealthKit of Samsung Health uit. Dat doet alleen de Flutter-app, na toestemming van de gebruiker.
 
 ## Projectstructuur
 
 ```text
-app/                 Laravel API
+app/                 Laravel API-code
 database/            migrations, factories en seeders
-docs/                API-contract en vaste syncfixtures
-mobile/              Flutter-source en platformadaptercontracten
-routes/api.php       publieke /api/v1-routes
-tests/Feature/Api/   API-featuretests
+docs/                API-contract en syncfixtures
+mobile/              Flutter-app
+routes/api.php       /api/v1 routes
+tests/Feature/Api/   API-tests
+release-apks/        lokale APK-deliverables, niet voor GitHub
 ```
+
+`SPEC.md` en `FORMAT.md` blijven in de repo als werkdocumenten voor Coding Stack/Cavekit.
 
 ## Backend starten
 
-Vereisten: PHP 8.3+, Composer en MySQL.
+Gebruik XAMPP voor MySQL. Start daarna Laravel apart op poort `8001`.
 
 ```powershell
-Copy-Item .env.example .env
+cd C:\Users\zakel\Laravel\SummaMove
 composer install
+Copy-Item .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
 php artisan serve --host=0.0.0.0 --port=8001
 ```
 
-Voor tests wordt SQLite in-memory gebruikt:
+Voor de demo moet XAMPP MySQL aan blijven en moet Laravel blijven draaien.
 
-```powershell
-php artisan test
-```
+## Demo accounts
 
-## API
+Alle seedaccounts gebruiken standaard wachtwoord `password123`, tenzij `DEMO_PASSWORD` in `.env` anders staat.
 
-Alle beveiligde routes gebruiken Sanctum bearer tokens met abilities:
+| Rol | E-mail |
+|---|---|
+| Gebruiker | `demo@example.com` |
+| Admin | `admin@summamove.test` |
 
-- `device:write`
-- `health:sync`
-- `health:read`
+## APK's
 
-Zie [docs/api-contract.md](docs/api-contract.md) voor requests, responses en invariants.
+De laatste lokale APK's staan in `release-apks/`.
+
+| APK | Bedoeld voor | API-url |
+|---|---|---|
+| `SummaMove-android-real-device.apk` | echte Android telefoon op dezelfde Wi-Fi | `http://192.168.178.109:8001/api/v1` |
+| `SummaMove-android-emulator.apk` | Android Emulator op dezelfde pc | `http://10.0.2.2:8001/api/v1` |
+
+De APK-map blijft lokaal in de Laravel map, maar wordt niet naar GitHub gepusht.
+
+## Health Connect en offline demo
+
+Op Android gebruikt de app standaard Health Connect. De gebruiker geeft read-only toestemming voor stappen, hartslag, actieve calorieen, voeding, water en workouts. De app schrijft niets terug naar Health Connect.
+
+Als de server niet bereikbaar is, kan de loginpagina ook een lokale incognito demo starten. Die gebruikt in-memory demodata en heeft geen Laravel-server nodig.
+
+## Belangrijkste API
+
+Alle routes staan onder `/api/v1` en gebruiken JSON. Beveiligde routes gebruiken Sanctum bearer tokens.
+
+Zie [docs/api-contract.md](docs/api-contract.md) voor het contract en `docs/fixtures/` voor voorbeeldpayloads.
 
 ## Flutter
 
-De Flutter-broncode staat in `mobile/`. De mock-adapter maakt lokale end-to-end ontwikkeling mogelijk zonder health-platform. Health Connect, HealthKit en Samsung Health gebruiken hetzelfde MethodChannel-contract.
+De mobiele app staat in [mobile/README.md](mobile/README.md). Daar staan ook de buildcommands voor de echte Android APK en emulator APK.
+
+## Tests
 
 ```powershell
+php artisan test
+
 cd mobile
-flutter pub get
 flutter analyze
 flutter test
-flutter run
 ```
 
-De native hostbridges moeten op SDK-geschikte machines worden aangesloten en getest:
-
-- Health Connect: Android SDK + echt/emulated ondersteund Android-toestel.
-- HealthKit: Mac, Xcode en echte iPhone.
-- Samsung Health: Android 10+, Samsung Health Data SDK en developer mode.
-
-## Grenzen eerste demo
-
-Geen achtergrond-sync, write-back, medische functies, AI-advies of appstore-publicatie. Ontbrekende metrics blijven `null`; workout-calorieën worden niet bij algemene actieve calorieën opgeteld.
+Geen productie-uitrol in deze versie: geen storepublicatie, geen medische functies, geen AI-advies, geen betalingen en geen realtime chat.
