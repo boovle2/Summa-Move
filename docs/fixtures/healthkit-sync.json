@@ -1,0 +1,27 @@
+{
+  "sync_id": "db52e1c6-5035-49bf-a411-234954444207",
+  "device_id": "ios-healthkit-demo",
+  "source": "healthkit",
+  "cursor": "hk-anchor-001",
+  "records": [
+    {
+      "external_id": "hk-water-001",
+      "metric_type": "water_intake",
+      "value": 500,
+      "unit": "ml",
+      "measured_at": "2026-06-10T09:00:00Z",
+      "timezone": "Europe/Amsterdam",
+      "source_app": "Health"
+    },
+    {
+      "external_id": "hk-dietary-energy-001",
+      "metric_type": "dietary_energy_consumed",
+      "value": 640,
+      "unit": "kcal",
+      "measured_at": "2026-06-10T10:30:00Z",
+      "timezone": "Europe/Amsterdam",
+      "source_app": "Health"
+    }
+  ],
+  "workouts": []
+}

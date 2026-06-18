@@ -1,0 +1,38 @@
+{
+  "sync_id": "6c0825e2-771d-4b40-8f2d-b56b0f05e141",
+  "device_id": "android-health-connect-demo",
+  "source": "health_connect",
+  "cursor": "hc-next-001",
+  "records": [
+    {
+      "external_id": "hc-steps-001",
+      "metric_type": "steps",
+      "value": 8450,
+      "unit": "count",
+      "measured_from": "2026-06-09T22:00:00Z",
+      "measured_to": "2026-06-10T21:59:59Z",
+      "timezone": "Europe/Amsterdam",
+      "source_app": "Health Connect"
+    },
+    {
+      "external_id": "hc-heart-001",
+      "metric_type": "heart_rate",
+      "value": 72,
+      "unit": "bpm",
+      "measured_at": "2026-06-10T08:30:00Z",
+      "timezone": "Europe/Amsterdam",
+      "source_app": "Health Connect"
+    }
+  ],
+  "workouts": [
+    {
+      "external_id": "hc-workout-001",
+      "activity_type": "running",
+      "started_at": "2026-06-10T07:00:00Z",
+      "ended_at": "2026-06-10T07:30:00Z",
+      "timezone": "Europe/Amsterdam",
+      "active_duration_seconds": 1800,
+      "energy_burned_kcal": 240
+    }
+  ]
+}
